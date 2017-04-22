@@ -43,7 +43,7 @@ void usage(void) {
 
 int main(int argc, char *argv[]) {
     int fd;
-    uint32_t *shrdram2;
+    uint8_t *shrdram2;
     int addr;
     uint32_t val;
 
@@ -72,11 +72,11 @@ int main(int argc, char *argv[]) {
     addr = strtol(argv[1], NULL, 0);
 
     if (argc == 2) {
-        val = shrdram2[addr];
+        val = *(uint32_t*)(&shrdram2[addr]);
         printf("read shrdram2[0x%04x] = 0x%08x (%d)\n", addr, val, val);
     } else {
         val = strtoul(argv[2], NULL, 0);
-        shrdram2[addr] = val;
+        *(uint32_t*)(&shrdram2[addr]) = val;
         printf("write shrdram2[0x%04x] = 0x%08x (%d)\n", addr, val, val);
     }
 
