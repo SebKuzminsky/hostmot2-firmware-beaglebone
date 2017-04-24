@@ -39,6 +39,10 @@
 #define SHRDRAM2_OFFS (0x10000)
 #define SHRDRAM2_SIZE (3*1024)
 
+// PRU0 has 11 pins brought out to P8 and P9
+// PRU1 has 15 pins
+#define NUM_PINS 11
+
 
 #define NUM_STEPGENS 4
 
@@ -65,6 +69,14 @@ inline uint32_t idrom_read4(uint16_t addr) {
     return *(uint32_t*)((uint8_t*)SHRDRAM2_OFFS + addr);
 }
 
+inline void idrom_write2(uint16_t addr, uint16_t val) {
+    *(uint16_t*)(SHRDRAM2_OFFS + addr) = val;
+}
+
+inline uint16_t idrom_read2(uint16_t addr) {
+    return *(uint16_t*)(SHRDRAM2_OFFS + addr);
+}
+
 inline void idrom_write1(uint16_t addr, uint8_t val) {
     *(uint8_t*)(SHRDRAM2_OFFS + addr) = val;
 }
@@ -86,6 +98,18 @@ void idrom_write_pin_descriptor(
     idrom_write1(pd_base_addr + (4 * pin_index) + 1, secondary_tag);
     idrom_write1(pd_base_addr + (4 * pin_index) + 2, secondary_unit);
     idrom_write1(pd_base_addr + (4 * pin_index) + 3, primary_tag);
+}
+
+
+void idrom_write_module_descriptor_gpio(uint32_t addr) {
+    idrom_write1(addr + 0, HM2_GTAG_IOPORT);  // GTAG
+    idrom_write1(addr + 1, 0);                // version
+    idrom_write1(addr + 2, 2);                // clocktag, 1=low, 2=high
+    idrom_write1(addr + 3, 1);                // number of instances
+    idrom_write2(addr + 4, 0x0300);           // base address
+    idrom_write1(addr + 6, 5);                // number of registers
+    idrom_write1(addr + 7, 0);                // instance stride 0 (0x0004)
+    idrom_write4(addr + 8, 0x1f);             // bitmap of which registers are multiple (1=multiple, LSb=r0)
 }
 
 
@@ -130,37 +154,38 @@ void hm2_idrom_setup(void) {
     idrom_write4( 4, MD_ADDR);  // offset from beginning of idrom to beginning of module descriptors
     idrom_write4( 8, PD_ADDR);  // offset from beginning of idrom to beginning of pin descriptors
 
-    // board name: "BB-PRUSS"
+    // board name: "BB-PRUx"
     idrom_write1(12, 'B');
     idrom_write1(13, 'B');
     idrom_write1(14, '-');
     idrom_write1(15, 'P');
     idrom_write1(16, 'R');
     idrom_write1(17, 'U');
-    idrom_write1(18, 'S');
-    idrom_write1(19, 'S');
+    idrom_write1(18, '0');  // '0' or '1'
+    idrom_write1(19, '\0');
 
-    idrom_write4(20, 0);   // fpga size - not applicable
-    idrom_write4(24, 0);   // number of pins on fpga - not applicable
-    idrom_write4(28, 4);   // number of io ports
-    idrom_write4(32, 92);  // number of io pins total
-    idrom_write4(36, 23);  // number of io pins per port
+    idrom_write4(20, 0);         // fpga size - not applicable
+    idrom_write4(24, 0);         // number of pins on fpga - not applicable
+    idrom_write4(28, 1);         // number of io ports
+    idrom_write4(32, NUM_PINS);  // number of io pins total
+    idrom_write4(36, NUM_PINS);  // number of io pins per port
 
     idrom_write4(40, 1000*1000);      // frequency of the slow clock
     idrom_write4(44, 200*1000*1000);  // frequency of the fast clock
 
-    idrom_write4(48, 10);  // "instance stride 0"
-    idrom_write4(52, 20);  // "instance stride 1"
+    idrom_write4(48, 0x0004);  // "instance stride 0"
+    idrom_write4(52, 0x0040);  // "instance stride 1"
 
-    idrom_write4(56, 10);  // "register stride 0"
-    idrom_write4(60, 20);  // "register stride 1"
+    idrom_write4(56, 0x0100);  // "register stride 0"
+    idrom_write4(60, 0x0004);  // "register stride 1"
 
     // Add Pin Descriptors
-    for (int i = 0; i < 92; i ++) {
+    for (int i = 0; i < NUM_PINS; i ++) {
         idrom_write_pin_descriptor(PD_ADDR, i, HM2_GTAG_IOPORT, 0, 0, 0);
     }
 
     // Add Module Descriptors
+    idrom_write_module_descriptor_gpio(MD_ADDR);
 }
 
 
