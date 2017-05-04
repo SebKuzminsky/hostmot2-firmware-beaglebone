@@ -39,9 +39,9 @@
 #define SHRDRAM2_OFFS (0x10000)
 #define SHRDRAM2_SIZE (3*1024)
 
-// PRU0 has 11 pins brought out to P8 and P9
-// PRU1 has 15 pins
-#define NUM_PINS 11
+// PRU0 has 11ish pins brought out to P8 and P9
+// PRU1 has 15ish pins
+#define NUM_PINS 32
 
 
 #define NUM_STEPGENS 4
@@ -105,7 +105,7 @@ void idrom_write_module_descriptor_gpio(uint32_t addr) {
     idrom_write1(addr + 0, HM2_GTAG_IOPORT);  // GTAG
     idrom_write1(addr + 1, 0);                // version
     idrom_write1(addr + 2, 2);                // clocktag, 1=low, 2=high
-    idrom_write1(addr + 3, 1);                // number of instances
+    idrom_write1(addr + 3, 2);                // number of instances
     idrom_write2(addr + 4, 0x0300);           // base address
     idrom_write1(addr + 6, 5);                // number of registers
     idrom_write1(addr + 7, 0);                // instance stride 0 (0x0004)
@@ -164,11 +164,11 @@ void hm2_idrom_setup(void) {
     idrom_write1(18, '0');  // '0' or '1'
     idrom_write1(19, '\0');
 
-    idrom_write4(20, 0);         // fpga size - not applicable
-    idrom_write4(24, 0);         // number of pins on fpga - not applicable
-    idrom_write4(28, 1);         // number of io ports
-    idrom_write4(32, NUM_PINS);  // number of io pins total
-    idrom_write4(36, NUM_PINS);  // number of io pins per port
+    idrom_write4(20, 0);           // fpga size - not applicable
+    idrom_write4(24, 0);           // number of pins on fpga - not applicable
+    idrom_write4(28, 2);           // number of io ports: P8 and P9
+    idrom_write4(32, NUM_PINS);    // number of io pins total
+    idrom_write4(36, NUM_PINS/2);  // number of io pins per port
 
     idrom_write4(40, 1000*1000);      // frequency of the slow clock
     idrom_write4(44, 200*1000*1000);  // frequency of the fast clock
